@@ -1,5 +1,5 @@
-Name: plotsquared build
- 
+name: Build and Deploy PlotSquared
+
 on:
   schedule:
     - cron: '0 5 * * 0'
@@ -8,23 +8,23 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
- 
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
- 
+
     steps:
       - name: Clone PlotSquared Repository
         run: git clone --depth=1 --branch main https://github.com/IntellectualSites/PlotSquared ./external-plotsquared
- 
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
- 
+
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -33,33 +33,31 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('external-plotsquared/**/*.gradle.kts', 'external-plotsquared/gradle.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
- 
+
       - name: Make gradlew executable
         working-directory: ./external-plotsquared
         run: chmod +x gradlew
- 
+
       - name: Build with Gradle
         working-directory: ./external-plotsquared
         run: ./gradlew build -x test --no-daemon -Pskip.signing
- 
+
       - name: Verify Artifacts
         run: |
-          echo "=== Bukkit output ==="
-          ls -la ./external-plotsquared/Bukkit/build/libs/ || true
- 
+          ls -la ./external-plotsquared/Bukkit/build/libs/
           if ! ls ./external-plotsquared/Bukkit/build/libs/PlotSquared-Bukkit-*.jar 2>/dev/null; then
             echo "::error::PlotSquared-Bukkit-*.jar not found"
             exit 1
           fi
           echo "Required JAR files exist"
- 
-      - name: Set Tag Name
+
+      - name: Set date and short sha as tag name
         id: set_tag
         run: |
           DATE=$(date +'%y%m%d-%H%M')
-          echo "TAG_NAME=build-$DATE" >> $GITHUB_ENV
-          echo "Generated Tag: build-$DATE"
- 
+          echo "TAG_NAME=plotsquared-build-$DATE" >> $GITHUB_ENV
+          echo "Generated Tag: plotsquared-build-$DATE"
+
       - name: Auto Release
         uses: marvinpinto/action-automatic-releases@latest
         with:
