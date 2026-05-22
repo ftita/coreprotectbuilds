@@ -1,4 +1,4 @@
-Name: Build and Deploy PlotSquared
+Name: plotsquared build
  
 on:
   schedule:
